@@ -6,14 +6,19 @@ const fastifySession = require("@fastify/session");
 const connectDB = require('./db'); 
 
 fastify.register(require('@fastify/cors'), {
-  origin: ['http://localhost:3000'], // Next.js default port
+  origin: 'http://localhost:3000', // ✅ frontend origin
+  credentials: true,               // ✅ allow cookies
 });
 
+
+// Register cookie plugin first
 fastify.register(fastifyCookie);
+
+// Then register session plugin
 fastify.register(fastifySession, {
-  secret: process.env.SESSION_SECRET, // use .env in production
+  secret: process.env.SESSION_SECRET,
   cookie: {
-    secure: false, // set to true if using HTTPS
+    secure: false, // true in production with HTTPS
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24, // 1 day
   },

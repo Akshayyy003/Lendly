@@ -1,35 +1,36 @@
-const fastify = require('fastify')({ logger: true });
 const bcrypt = require("bcryptjs");
-const User = require('../models/User');
-// Login route
-fastify.post("/api/login", async (req, reply) => {
-  const { email, password } = req.body;
+const User = require("../models/User");
 
-  if (!email || !password) {
-    return reply.status(400).send({ error: "All fields are required." });
-  }
+module.exports = async function (fastify, opts) {
+  fastify.post("/api/login", async (req, reply) => {
+    const { email, password } = req.body;
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return reply.status(404).send({ error: "User not found" });
+    if (!email || !password) {
+      return reply.status(400).send({ error: "All fields are required." });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return reply.status(401).send({ error: "Invalid credentials" });
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return reply.status(404).send({ error: "User not found" });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return reply.status(401).send({ error: "Invalid credentials" });
+      }
+
+      // ✅ Set session
+      req.session.user = {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+      };
+
+      return reply.send({ message: "Login successful", user: req.session.user });
+    } catch (err) {
+      req.log.error(err);
+      return reply.status(500).send({ error: "Server error" });
     }
-
-    // Set session
-    req.session.user = {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-    };
-
-    return reply.send({ message: "Login successful", user: req.session.user });
-  } catch (err) {
-    req.log.error(err);
-    return reply.status(500).send({ error: "Server error" });
-  }
-});
+  });
+};
