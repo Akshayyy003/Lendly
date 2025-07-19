@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Plus, FileText, Package, User, Settings, Menu, X, LogOut } from "lucide-react"
@@ -17,6 +17,25 @@ const navigation = [
 export default function Sidebar() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const [user, setUser] = useState<{ firstName: string; email: string } | null>(null)
+
+  // Fetch session user
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/me", { credentials: "include" })
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
+        } else {
+          setUser(null)
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error)
+      }
+    }
+    fetchUser()
+  }, [])
 
   return (
     <>
@@ -72,16 +91,20 @@ export default function Sidebar() {
           {/* User Profile */}
           <div className="p-4 border-t">
             <div className="space-y-2">
-              <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 cursor-pointer">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
+              {user ? (
+                <div className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 cursor-pointer">
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.firstName}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  <Settings className="h-4 w-4 text-gray-400" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
-                  <p className="text-xs text-gray-500 truncate">john.doe@email.com</p>
-                </div>
-                <Settings className="h-4 w-4 text-gray-400" />
-              </div>
+              ) : (
+                <p className="text-sm text-gray-500 px-3">Loading user...</p>
+              )}
               <Button
                 variant="ghost"
                 size="sm"

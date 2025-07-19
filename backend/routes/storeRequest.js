@@ -105,7 +105,6 @@ module.exports = async function (fastify, opts) {
 
   // Get user's own requests
   fastify.get("/api/my-requests", async (req, reply) => {
-    console.log("Fetching my requests...");
     try {
       const loggedInUserId = req.session.user?.id;
       if (!loggedInUserId) {

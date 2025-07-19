@@ -105,19 +105,19 @@ async function lendOfferRoutes(fastify, options) {
 
   // ACCEPT offer (delete request + send email)
   fastify.post("/api/lend-offers/:id/accept", async (req, reply) => {
-  try {
-    const { id } = req.params;
-    const offer = await LendOffer.findById(id);
+    try {
+      const { id } = req.params;
+      const offer = await LendOffer.findById(id);
 
-    if (!offer) {
-      return reply.status(404).send({ message: "Offer not found" });
-    }
+      if (!offer) {
+        return reply.status(404).send({ message: "Offer not found" });
+      }
 
-    // Remove the related request
-    await Request.findByIdAndDelete(offer.requestId);
+      // Remove the related request
+      await Request.findByIdAndDelete(offer.requestId);
 
-    // Send acceptance email with contact info
-    const emailContent = `
+      // Send acceptance email with contact info
+      const emailContent = `
       Hi,
 
       Your offer for ${offer.itemName} has been accepted!
@@ -131,23 +131,68 @@ async function lendOfferRoutes(fastify, options) {
       Thank you!
     `;
 
-    await sendEmail(
-      offer.email,
-      "Your Offer was Accepted",
-      emailContent
-    );
+      await sendEmail(
+        offer.email,
+        "Your Offer was Accepted",
+        emailContent
+      );
 
-    // Optionally, remove all other offers for the same request
-    await LendOffer.deleteMany({ requestId: offer.requestId });
+      // Optionally, remove all other offers for the same request
+      await LendOffer.deleteMany({ requestId: offer.requestId });
 
-    return reply.send({ message: "Offer accepted, request deleted, email sent." });
+      return reply.send({ message: "Offer accepted, request deleted, email sent." });
+    } catch (error) {
+      console.error("Error accepting offer:", error);
+      return reply.status(500).send({ message: "Server error" });
+    }
+  });
+
+  fastify.get("/api/my-offers", async (req, reply) => {
+  try {
+
+    if (!req.session || !req.session.user) {
+      return reply.status(401).send({ message: "Not authenticated" });
+    }
+
+    const userId = req.session.user.id; // Get user ID from session
+    console.log("Fetching offers for user:", userId);
+    const offers = await LendOffer.find({ lenderId: userId }).sort({ createdAt: -1 });
+
+    return reply.send(offers);
   } catch (error) {
-    console.error("Error accepting offer:", error);
+    console.error("Error fetching offers:", error);
     return reply.status(500).send({ message: "Server error" });
   }
 });
 
+fastify.delete("/api/my/lend-offers/:id", async (req, reply) => {
+    try {
+      const offerId = req.params.id;
+
+      // Check authentication (optional)
+      if (!req.session || !req.session.user) {
+        return reply.status(401).send({ message: "Not authenticated" });
+      }
+
+      const userId = req.session.user.id;
+
+      // Find the offer and ensure it's owned by the user
+      const offer = await LendOffer.findOne({ _id: offerId, lenderId: userId });
+      if (!offer) {
+        return reply.status(404).send({ message: "Offer not found" });
+      }
+
+      await LendOffer.findByIdAndDelete(offerId);
+
+      return reply.send({ message: "Offer deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting offer:", error);
+      return reply.status(500).send({ message: "Server error while deleting offer" });
+    }
+  });
 
 }
+
+
 
 module.exports = lendOfferRoutes;
