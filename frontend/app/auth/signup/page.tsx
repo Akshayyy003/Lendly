@@ -91,7 +91,8 @@ export default function SignupPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: formData.firstName + " " + formData.lastName,
+          firstName: formData.firstName ,
+          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
           number: formData.phone,

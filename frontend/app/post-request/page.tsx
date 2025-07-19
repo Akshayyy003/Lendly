@@ -1,13 +1,69 @@
-import { ArrowLeft, Calendar, Clock, MapPin, FileText } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
+"use client";
+
+import { useState } from "react";
+import { ArrowLeft, Calendar, Clock, MapPin, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 export default function PostRequestPage() {
+  const [itemDescription, setItemDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [dateNeeded, setDateNeeded] = useState("");
+  const [timeNeeded, setTimeNeeded] = useState("");
+  const [duration, setDuration] = useState("");
+  const [city, setCity] = useState("");
+  const [area, setArea] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const formData = {
+      itemDescription,
+      category,
+      dateNeeded,
+      timeNeeded,
+      duration,
+      city,
+      area,
+      notes,
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/api/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // important for session
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ Request posted successfully!");
+        setItemDescription("");
+        setCategory("");
+        setDateNeeded("");
+        setTimeNeeded("");
+        setDuration("");
+        setCity("");
+        setArea("");
+        setNotes("");
+      } else {
+        alert(`❌ Error: ${data.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Server error!");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -33,7 +89,7 @@ export default function PostRequestPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Item Description */}
               <div className="space-y-2">
                 <Label htmlFor="item-description" className="flex items-center space-x-2">
@@ -42,6 +98,8 @@ export default function PostRequestPage() {
                 </Label>
                 <Input
                   id="item-description"
+                  value={itemDescription}
+                  onChange={(e) => setItemDescription(e.target.value)}
                   placeholder="e.g., DSLR Camera, Power Drill, Gaming Console"
                   className="rounded-xl"
                 />
@@ -50,7 +108,7 @@ export default function PostRequestPage() {
               {/* Category */}
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select>
+                <Select onValueChange={(val) => setCategory(val)}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -72,7 +130,13 @@ export default function PostRequestPage() {
                     <Calendar className="h-4 w-4" />
                     <span>Date Needed</span>
                   </Label>
-                  <Input id="date-needed" type="date" className="rounded-xl" />
+                  <Input
+                    id="date-needed"
+                    type="date"
+                    value={dateNeeded}
+                    onChange={(e) => setDateNeeded(e.target.value)}
+                    className="rounded-xl"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -80,14 +144,20 @@ export default function PostRequestPage() {
                     <Clock className="h-4 w-4" />
                     <span>Time Needed</span>
                   </Label>
-                  <Input id="time-needed" type="time" className="rounded-xl" />
+                  <Input
+                    id="time-needed"
+                    type="time"
+                    value={timeNeeded}
+                    onChange={(e) => setTimeNeeded(e.target.value)}
+                    className="rounded-xl"
+                  />
                 </div>
               </div>
 
               {/* Duration */}
               <div className="space-y-2">
                 <Label>Duration</Label>
-                <Select>
+                <Select onValueChange={(val) => setDuration(val)}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue placeholder="How long do you need it?" />
                   </SelectTrigger>
@@ -106,19 +176,18 @@ export default function PostRequestPage() {
 
               {/* Location */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Select>
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new-york">New York</SelectItem>
-                      <SelectItem value="brooklyn">Brooklyn</SelectItem>
-                      <SelectItem value="queens">Queens</SelectItem>
-                      <SelectItem value="manhattan">Manhattan</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-2">
+                  <Label htmlFor="area" className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4" />
+                    <span>City</span>
+                  </Label>
+                  <Input
+                    id="area"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Delhi , Mumbai, Bangalore"
+                    className="rounded-xl"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -126,7 +195,13 @@ export default function PostRequestPage() {
                     <MapPin className="h-4 w-4" />
                     <span>Area/Neighborhood</span>
                   </Label>
-                  <Input id="area" placeholder="e.g., Williamsburg, Astoria" className="rounded-xl" />
+                  <Input
+                    id="area"
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    placeholder="e.g., Williamsburg, Astoria"
+                    className="rounded-xl"
+                  />
                 </div>
               </div>
 
@@ -135,6 +210,8 @@ export default function PostRequestPage() {
                 <Label htmlFor="notes">Additional Notes (Optional)</Label>
                 <Textarea
                   id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any specific requirements, preferred pickup location, or additional details..."
                   className="rounded-xl min-h-[100px]"
                 />
@@ -149,5 +226,5 @@ export default function PostRequestPage() {
         </Card>
       </main>
     </div>
-  )
+  );
 }

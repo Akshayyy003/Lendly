@@ -5,9 +5,9 @@ const bcrypt = require('bcrypt');
 module.exports = async function registerUser(fastify, options) {
 
     fastify.post('/api/signup', async (request, reply) => {
-        const { name, email, city, number, password } = request.body;
+        const { firstName , lastName, email, city, number, password } = request.body;
 
-        if ( !name || !email || !city || !number || !password) {
+        if (!firstName || !lastName || !email || !city || !number || !password) {
             return reply.status(400).send({ error: 'All fields are required' });
         }
 
@@ -19,7 +19,8 @@ module.exports = async function registerUser(fastify, options) {
 
             const hashedPassword = await bcrypt.hash(password, 10);
             const newUser = new user({
-                name,
+                firstName,
+                lastName,
                 email,
                 city,
                 number,
@@ -31,7 +32,7 @@ module.exports = async function registerUser(fastify, options) {
                 message: 'User created successfully',
                 user: {
                     id: newUser._id,
-                    name: newUser.name,
+                    firstName: newUser.firstName,
                     email: newUser.email,
                 },
             });
@@ -41,4 +42,12 @@ module.exports = async function registerUser(fastify, options) {
         }
 
     });
+    fastify.get("/api/me", async (req, reply) => {
+        if (!req.session.user) {
+            return reply.status(401).send({ error: "Not authenticated" });
+        }
+
+        return reply.send({ user: req.session.user });
+    });
+
 }

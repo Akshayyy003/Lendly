@@ -20,11 +20,10 @@ module.exports = async function (fastify, opts) {
         return reply.status(401).send({ error: "Invalid credentials" });
       }
 
-      // ✅ Set session
       req.session.user = {
         id: user._id,
         email: user.email,
-        name: user.name,
+        firstName: user.firstName,
       };
 
       return reply.send({ message: "Login successful", user: req.session.user });
@@ -33,4 +32,13 @@ module.exports = async function (fastify, opts) {
       return reply.status(500).send({ error: "Server error" });
     }
   });
+
+
+  
+  fastify.post("/api/logout", async (req, reply) => {
+    req.session.destroy();
+    reply.send({ message: "Logged out" });
+  });
+
+  
 };

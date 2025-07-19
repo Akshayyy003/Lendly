@@ -40,6 +40,8 @@ export default function LoginPage() {
 
       const data = await res.json();
 
+      
+
       if (!res.ok) {
         alert(`❌ Login failed: ${data.error || "Unknown error"}`);
       } else {
