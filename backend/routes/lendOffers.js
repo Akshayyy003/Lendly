@@ -105,33 +105,49 @@ async function lendOfferRoutes(fastify, options) {
 
   // ACCEPT offer (delete request + send email)
   fastify.post("/api/lend-offers/:id/accept", async (req, reply) => {
-    try {
-      const { id } = req.params;
-      const offer = await LendOffer.findById(id);
+  try {
+    const { id } = req.params;
+    const offer = await LendOffer.findById(id);
 
-      if (!offer) {
-        return reply.status(404).send({ message: "Offer not found" });
-      }
-
-      // Remove the related request
-      await Request.findByIdAndDelete(offer.requestId);
-
-      // Send acceptance email
-      await sendEmail(
-        offer.email,
-        "Your Offer was Accepted",
-        `Hi, your offer for ${offer.itemName} has been accepted!`
-      );
-
-      // Optionally, remove all other offers for the same request
-      await LendOffer.deleteMany({ requestId: offer.requestId });
-
-      return reply.send({ message: "Offer accepted, request deleted, email sent." });
-    } catch (error) {
-      console.error("Error accepting offer:", error);
-      return reply.status(500).send({ message: "Server error" });
+    if (!offer) {
+      return reply.status(404).send({ message: "Offer not found" });
     }
-  });
+
+    // Remove the related request
+    await Request.findByIdAndDelete(offer.requestId);
+
+    // Send acceptance email with contact info
+    const emailContent = `
+      Hi,
+
+      Your offer for ${offer.itemName} has been accepted!
+
+      Here are your contact details for coordination:
+      - Contact Number: ${offer.phone || "Not provided"}
+      - Email: ${offer.email}
+
+      Please get in touch to proceed further.
+
+      Thank you!
+    `;
+
+    await sendEmail(
+      offer.email,
+      "Your Offer was Accepted",
+      emailContent
+    );
+
+    // Optionally, remove all other offers for the same request
+    await LendOffer.deleteMany({ requestId: offer.requestId });
+
+    return reply.send({ message: "Offer accepted, request deleted, email sent." });
+  } catch (error) {
+    console.error("Error accepting offer:", error);
+    return reply.status(500).send({ message: "Server error" });
+  }
+});
+
+
 }
 
 module.exports = lendOfferRoutes;
